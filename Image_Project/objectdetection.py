@@ -12,13 +12,11 @@ parser.add_argument('-m','--movie',help='object detection on video')
 args = parser.parse_args()
 
 #crtl-C ctrl-v
-def object_detection():
-    blob = cv2.dnn.blobFromImage(image, 1.0/255.0, (320,320), [0,0,0], True, crop=False)
-    Width = image.shape[1]
-    Height = image.shape[0]
-    net.setInput(blob)
+def object_detection(Trained_net):
+    Height, Width = image.shape[0], image.shape[1]
+    Trained_net.setInput(cv2.dnn.blobFromImage(image, 1.0/255.0, (320,320), [0,0,0], True, crop=False))
     
-    outs = net.forward(getOutputsNames(net))
+    outs = Trained_net.forward(getOutputsNames(Trained_net))
     
     class_ids = []
     confidences = []
@@ -66,8 +64,6 @@ def object_detection():
     
     usleep = lambda x: time.sleep(x/1000000.0)
     usleep(100)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
 
 RED = '#fc0505'
 SILVER = '#b3b3b3'
@@ -92,7 +88,7 @@ if args.verbose:
     print(CLASSES)
 
 #configure network with weights
-TRAINED_NET = cv2.dnn.readNet(args.weights,args.architecture)
+Trained_net = cv2.dnn.readNet(args.weights,args.architecture)
 
 
 #select imput type
@@ -100,7 +96,7 @@ if args.image:
     if args.verbose:
         print("loading image: "+args.image)
     image = cv2.imread(args.image)
-    object_detection()
+    object_detection(Trained_net)
     
 elif args.movie:
     if args.verbose:
@@ -108,7 +104,7 @@ elif args.movie:
     cap = cv2.VideoCapture(args.movie)
     while(cap.isOpened()):
         hasframe, image = cap.read()
-        object_detection()
+        object_detection(Trained_net)
     
 else:
     if args.verbose:
