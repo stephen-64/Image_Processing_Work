@@ -1,2 +1,4 @@
 *.mkv
 *.weights
+*.code-workspace
+*.jpg
