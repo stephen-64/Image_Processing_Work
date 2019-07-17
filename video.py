@@ -6,11 +6,11 @@ import time
 
 ap = argparse.ArgumentParser()
 ap.add_argument('-c', '--config', 
-                help = 'path to yolo config file', default='cfg/yolov3-tiny-F1-10C.cfg')
+                help = 'path to yolo config file', default='YOLO_Tiny/yolov3-tiny-F1-10C.cfg')
 ap.add_argument('-w', '--weights', 
-                help = 'path to yolo pre-trained weights', default='backup/yolov3-tiny-F1-10C_20000.weights')
+                help = 'path to yolo pre-trained weights', default='YOLO_Tiny/yolov3-tiny-F1-10C_20000.weights')
 ap.add_argument('-cl', '--classes', 
-                help = 'path to text file containing class names',default='data/F1-obj-10C.names')
+                help = 'path to text file containing class names',default='YOLO_Tiny/F1-obj-10C.names')
 args = ap.parse_args()
 
 

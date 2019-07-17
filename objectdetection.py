@@ -1,79 +1,29 @@
 import cv2
 import numpy as np
 import argparse
+import sys
+import time
 
 parser = argparse.ArgumentParser(description='object detection using YOLOV3')
 parser.add_argument('-v','--verbose', help="verbosity", action='store_true', default='store_false')
-parser.add_argument('-a','--architecture',help='YOLO architecture')
+parser.add_argument('-a','--config',help='YOLO config')
 parser.add_argument('-w','--weights', help='weights from trained data')
 parser.add_argument('-c','--classes', help='data classes')
-parser.add_argument('-i','--image',help='object detection on image')
-parser.add_argument('-m','--movie',help='object detection on video')
+parser.add_argument('-i','--input',help='object detection on image or video')
+parser.add_argument('-t','--confidence',help='threshold',default=0.5)
+parser.add_argument('-n','--nms',help='non-maximal noise suppression',default=0.4)
+parser.add_argument('-m','--matrix',help='size of initial image',default=320)
 args = parser.parse_args()
 
-#crtl-C ctrl-v
-def object_detection(Trained_net):
-    Height, Width = image.shape[0], image.shape[1]
-    Trained_net.setInput(cv2.dnn.blobFromImage(image, 1.0/255.0, (320,320), [0,0,0], True, crop=False))
-    
-    outs = Trained_net.forward(getOutputsNames(Trained_net))
-    
-    class_ids = []
-    confidences = []
-    boxes = []
-    conf_threshold = 0.5
-    nms_threshold = 0.4
-    
-    for out in outs: 
-        #print(out.shape)
-        for detection in out:
-            
-        #each detection  has the form like this [center_x center_y width height obj_score class_1_score class_2_score ..]
-            scores = detection[5:]#classes scores starts from index 5
-            class_id = np.argmax(scores)
-            confidence = scores[class_id]
-            if confidence > 0.5:
-                center_x = int(detection[0] * Width)
-                center_y = int(detection[1] * Height)
-                w = int(detection[2] * Width)
-                h = int(detection[3] * Height)
-                x = center_x - w / 2
-                y = center_y - h / 2
-                class_ids.append(class_id)
-                confidences.append(float(confidence))
-                boxes.append([x, y, w, h])
-    
-    # apply  non-maximum suppression algorithm on the bounding boxes
-    indices = cv2.dnn.NMSBoxes(boxes, confidences, conf_threshold, nms_threshold)
-    
-    for i in indices:
-        i = i[0]
-        box = boxes[i]
-        x = box[0]
-        y = box[1]
-        w = box[2]
-        h = box[3]
-        draw_pred(image, class_ids[i], confidences[i], round(x), round(y), round(x+w), round(y+h))
-   
-    # Put efficiency information.
-    t, _ = net.getPerfProfile()
-    label = 'Inference time: %.2f ms' % (t * 1000.0 / cv2.getTickFrequency())
-    cv2.putText(image, label, (0, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0))
-    
-    cv2.imshow(window_title, image)
-    
-    usleep = lambda x: time.sleep(x/1000000.0)
-    usleep(100)
-
-RED = '#fc0505'
-SILVER = '#b3b3b3'
-BLUE = '#054ffc'
-ORANGE = '#fc8505'
-DARKRED = '#a10000'
-LIGHTBLUE = '#ooccff'
-PINK = 'f700ff'
-BROWN = '#654321'
-WHITE = '#ffffff'
+RED = (5,5,252)
+SILVER = (180,180,180)
+BLUE = (252,79,5)
+ORANGE = (5,133,252)
+DARKRED = (0,0,161)
+LIGHTBLUE = (255,204,0)
+PINK = (247,0,255)
+BROWN = (33,67,101)
+WHITE = (255,255,255)
 
 #defined color for each class
 COLORS = [RED,SILVER,BLUE,ORANGE,DARKRED,LIGHTBLUE,PINK,BROWN,WHITE]
@@ -88,24 +38,70 @@ if args.verbose:
     print(CLASSES)
 
 #configure network with weights
-Trained_net = cv2.dnn.readNet(args.weights,args.architecture)
+net = cv2.dnn.readNet(args.weights,args.config)
+#net.setPreferableBackend(args.backend)
+#net.setPreferableTarget(args.target)
 
+WINDOW_NAME = 'Vehicle-Object-Detection'
+cv2.namedWindow(WINDOW_NAME,cv2.WINDOW_NORMAL)
 
-#select imput type
-if args.image:
-    if args.verbose:
-        print("loading image: "+args.image)
-    image = cv2.imread(args.image)
-    object_detection(Trained_net)
+cap = cv2.VideoCapture(args.input)
+
+def getOutputsNames(net):
+    layersNames = net.getLayerNames()
+    return [layersNames[i[0] - 1] for i in net.getUnconnectedOutLayers()]
+
+while(cap.isOpened()):
+    hasframe, image = cap.read()
+    net.setInput(cv2.dnn.blobFromImage(image, 1.0/255.0, (args.matrix,args.matrix), [0,0,0], True))
+    Width, Height = image.shape[1], image.shape[0]
+
+    outs = net.forward(getOutputsNames(net))
+
+    class_ids = []
+    confidences = []
+    boxes = []
+
+    for out in outs:
+            for detection in out:
+                scores = detection[5:]
+                classId = np.argmax(scores)
+                confidence = scores[classId]
+                if confidence > args.confidence:
+                    center_x = int(detection[0] * Width)
+                    center_y = int(detection[1] * Height)
+                    width = int(detection[2] * Width)
+                    height = int(detection[3] * Height)
+                    left = int(center_x - width / 2)
+                    top = int(center_y - height / 2)
+                    class_ids.append(classId)
+                    confidences.append(float(confidence))
+                    boxes.append([left, top, width, height])
+
+    indices = cv2.dnn.NMSBoxes(boxes, confidences, args.confidence, args.nms)
+    for i in indices:
+        i = i[0]
+        box = boxes[i]
+        left = box[0]
+        top = box[1]
+        width = box[2]
+        height = box[3]
+        
+        label = str(CLASSES[class_ids[i]])
+        color = COLORS[class_ids[i]]
+
+        cv2.rectangle(image, (int(left),int(top)), (int(left + width),int(top + height)), color, 2)
+        cv2.putText(image, label, (int(left-10),int(top-10)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+
+    # Put efficiency information.
+    t, _ = net.getPerfProfile()
+    label = 'Inference time: %.2f ms' % (t * 1000.0 / cv2.getTickFrequency())
+    cv2.putText(image, label, (0, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0))
     
-elif args.movie:
-    if args.verbose:
-        print("loading video: "+args.movie)
-    cap = cv2.VideoCapture(args.movie)
-    while(cap.isOpened()):
-        hasframe, image = cap.read()
-        object_detection(Trained_net)
-    
-else:
-    if args.verbose:
-        print("testing network")
+    cv2.imshow(WINDOW_NAME, image)
+    #cv2.waitKey(0)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()

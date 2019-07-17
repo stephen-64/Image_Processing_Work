@@ -4,20 +4,48 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        /*
         {
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
-            "program": "${file}",
+            "program": "${workspaceRoot}/video.py",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceRoot}/../opencv/samples/dnn/object_detection.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--config=YOLO_Tiny/yolov3-tiny-F1-10C.cfg",
+                "--model=YOLO_Tiny/yolov3-tiny-F1-10C_20000.weights",
+                "--classes=YOLO_Tiny/F1-obj-10C.names",
+                "--width=416",
+                "--height=416",
+                "--scale=0.0392",
+                "--input=F1_Austria_Race_Trimmed30.mkv",
+                "--rgb"
+            ]
+        },
+        */
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceRoot}/objectdetection.py",
             "console": "integratedTerminal",
             "args": [
                 "-v",
                 "-a",
-                "Image_Project/YOLO_Tiny/yolov3-tiny-F1-10C.cfg",
+                "YOLO_Tiny/yolov3-tiny-F1-10C.cfg",
                 "-w",
-                "Image_Project/YOLO_Tiny/yolov3-tiny-F1-10C_20000.weights",
+                "YOLO_Tiny/yolov3-tiny-F1-10C_20000.weights",
                 "-c",
-                "Image_Project/Yolo_Tiny/F1-onj-10C.names"
+                "YOLO_Tiny/F1-obj-10C.names",
+                "-i",
+                "F1_Austria_Race_Trimmed30.mkv"
             ]
         }
     ]
