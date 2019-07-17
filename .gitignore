@@ -1,4 +1,8 @@
 *.mkv
 *.weights
 *.code-workspace
+<<<<<<< HEAD
 *.jpg
+=======
+
+>>>>>>> 4b2efbc71f9421e71d2e57535c41fa596313941e
