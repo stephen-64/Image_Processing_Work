@@ -66,6 +66,8 @@ class App(Frame):
 
 def window_worker():
     root = Tk()
+    root.resizable(False,False)
+    root.iconbitmap(".\\f1.ico")
     root.title("Video Processor")
     app = App(master=root)
     #root.geometry("420x210")
