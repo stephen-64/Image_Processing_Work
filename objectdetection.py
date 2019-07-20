@@ -127,6 +127,8 @@ while(cap.isOpened()):
         #cv2.waitKey(0)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
+    if cv2.getWindowProperty(WINDOW_NAME,0) == -1:
+        break
 
 cap.release()
 cv2.destroyAllWindows()
