@@ -37,7 +37,6 @@
             "program": "${workspaceRoot}/objectdetection.py",
             "console": "integratedTerminal",
             "args": [
-                "-v",
                 "-a",
                 "YOLO_Tiny/yolov3-tiny-F1-10C.cfg",
                 "-w",
@@ -45,7 +44,7 @@
                 "-c",
                 "YOLO_Tiny/F1-obj-10C.names",
                 "-i",
-                "F1_Austria_Race_Trimmed.mkv"
+                "F1_Austria_Race_Trimmed30.mkv"
             ]
         }
     ]

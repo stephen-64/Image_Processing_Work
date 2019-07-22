@@ -3,10 +3,9 @@ import numpy as np
 import argparse
 import sys
 import time
+import cvui
 
 parser = argparse.ArgumentParser(description='object detection using YOLOV3')
-parser.add_argument('-v','--verbose', help="verbosity", action='store_true', 
-    default='store_false')
 parser.add_argument('-a','--config',help='YOLO config',
     default='YOLO_Tiny/yolov3-tiny-F1-10C.cfg')
 parser.add_argument('-w','--weights', help='weights from trained data', 
@@ -31,23 +30,25 @@ PINK = (247,0,255)
 BROWN = (33,67,101)
 WHITE = (255,255,255)
 
+verbose = True
+
 #defined color for each class
 COLORS = [RED,SILVER,BLUE,ORANGE,DARKRED,YELLOW,LIGHTBLUE,PINK,BROWN,WHITE]
-if args.verbose:
+if verbose:
     print(COLORS)
 
 #put classes into a list
 with open(args.classes, 'r') as classes:
     CLASSES = classes.readlines()
 CLASSES = [x.strip() for x in CLASSES]
-if args.verbose:
+if verbose:
     print(CLASSES)
 
 #configure network with weights
 net = cv2.dnn.readNetFromDarknet(args.config,args.weights)
 
 WINDOW_NAME = 'Vehicle-Object-Detection using YOLO'
-cv2.namedWindow(WINDOW_NAME,cv2.WINDOW_NORMAL)
+cv2.namedWindow(WINDOW_NAME)
 
 def callback_conf(pos):
     global threshold_confidence
@@ -62,22 +63,18 @@ threshold_nms = args.nms
 
 cv2.createTrackbar('Confidence threshold, %', WINDOW_NAME, int(threshold_confidence * 100), 99, callback_conf)
 cv2.createTrackbar('Non-Maxima noise supression, %', WINDOW_NAME, int(threshold_nms * 100), 99, callback_nms)
+#cv2.createButton('320', callback_320,)
 
 cap = cv2.VideoCapture(args.input)
 
-
-#-------
-def getOutputsNames(net):
-    layersNames = net.getLayerNames()
-    return [layersNames[i[0] - 1] for i in net.getUnconnectedOutLayers()]
-#-------
 while(cap.isOpened()):
     hasframe, image = cap.read()
     overlay = image.copy()
     net.setInput(cv2.dnn.blobFromImage(image, 1.0/255.0, (args.matrix,args.matrix), [0,0,0], True))
-    Width, Height = image.shape[1], image.shape[0]
+    Height, Width = image.shape[:2]
 
-    outs = net.forward(getOutputsNames(net))
+    #only works with yolo_tiny
+    outs = net.forward(['yolo_16', 'yolo_23'])
 
     class_ids = []
     confidences = []
@@ -105,10 +102,7 @@ while(cap.isOpened()):
     for i in indices:
         i = i[0]
         box = boxes[i]
-        left = box[0]
-        top = box[1]
-        width = box[2]
-        height = box[3]
+        left,top, width, height = box[:4]
         
         label = str(CLASSES[class_ids[i]]+': {:.2f}%'.format(100*confidences[i]))
         color = COLORS[class_ids[i]]
@@ -119,22 +113,26 @@ while(cap.isOpened()):
         #cv2.addWeighted(image,alpha,overlay,1-alpha,0,image)
 
     # Put efficiency information.
-    if args.verbose:
+    if verbose:
         time, _ = net.getPerfProfile()
         label_inference = 'Inference time: %.2f ms' % (time * 1000.0 / cv2.getTickFrequency())
         label_config =    'Config: %s' % args.config
         label_weight =    'Weight: %s' % args.weights
         label_input =     'Input: %s' % args.input
+        label_mat_size =  'Mat Size: %s' % args.matrix
         cv2.putText(image, label_inference, (0, 15), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255))
         cv2.putText(image, label_config, (0, 30), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255))
         cv2.putText(image, label_weight, (0, 45), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255))
         cv2.putText(image, label_input, (0, 60), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255))
+        cv2.putText(image, label_mat_size, (0, 75), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255))
     
     cv2.imshow(WINDOW_NAME, image)
     #if args.verbose:
         #cv2.waitKey(0)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
+    if cv2.waitKey(1) & 0xFF == ord('v'):
+        verbose = not verbose
     if cv2.getWindowProperty(WINDOW_NAME,0) == -1:
         break
 
