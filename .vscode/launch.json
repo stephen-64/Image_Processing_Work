@@ -20,7 +20,7 @@
             "console": "integratedTerminal",
             "args": [
                 "--config=YOLO_Tiny/yolov3-tiny-F1-10C.cfg",
-                "--model=YOLO_Tiny/yolov3-tiny-F1-10C_20000.weights",
+                "--model=YOLO_Tiny/yolov3-tiny-F1-10C_60000.weights",
                 "--classes=YOLO_Tiny/F1-obj-10C.names",
                 "--width=416",
                 "--height=416",
@@ -41,11 +41,11 @@
                 "-a",
                 "YOLO_Tiny/yolov3-tiny-F1-10C.cfg",
                 "-w",
-                "YOLO_Tiny/yolov3-tiny-F1-10C_20000.weights",
+                "YOLO_Tiny/yolov3-tiny-F1-10C_60000.weights",
                 "-c",
                 "YOLO_Tiny/F1-obj-10C.names",
                 "-i",
-                "F1_Austria_Race_Trimmed30.mkv"
+                "F1_Austria_Race_Trimmed.mkv"
             ]
         }
     ]

@@ -1,6 +1,7 @@
 *.mkv
 *.weights
 *.code-workspace
+Image_Project/
 <<<<<<< HEAD
 *.jpg
 =======

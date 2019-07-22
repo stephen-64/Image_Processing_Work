@@ -10,13 +10,13 @@ parser.add_argument('-v','--verbose', help="verbosity", action='store_true',
 parser.add_argument('-a','--config',help='YOLO config',
     default='YOLO_Tiny/yolov3-tiny-F1-10C.cfg')
 parser.add_argument('-w','--weights', help='weights from trained data', 
-    default='YOLO_Tiny/yolov3-tiny-F1-10C_20000.weights')
+    default='YOLO_Tiny/yolov3-tiny-F1-10C_60000.weights')
 parser.add_argument('-c','--classes', help='data classes',
     default='YOLO_Tiny/F1-obj-10C.names')
 parser.add_argument('-i','--input',help='object detection on image or video',
     default='F1_Austria_Race_Trimmed30.mkv')
 parser.add_argument('-t','--confidence',help='threshold',default=0.1)
-parser.add_argument('-n','--nms',help='non-maximal noise suppression',default=0.05)
+parser.add_argument('-n','--nms',help='non-maximal noise suppression',default=0.99)
 parser.add_argument('-m','--matrix',help='size of initial image',default=320)
 args = parser.parse_args()
 
@@ -44,11 +44,9 @@ if args.verbose:
     print(CLASSES)
 
 #configure network with weights
-net = cv2.dnn.readNet(args.weights,args.config)
-#net.setPreferableBackend(args.backend)
-#net.setPreferableTarget(args.target)
+net = cv2.dnn.readNetFromDarknet(args.config,args.weights)
 
-WINDOW_NAME = 'Vehicle-Object-Detection'
+WINDOW_NAME = 'Vehicle-Object-Detection using YOLO'
 cv2.namedWindow(WINDOW_NAME,cv2.WINDOW_NORMAL)
 
 def callback_conf(pos):
@@ -67,10 +65,12 @@ cv2.createTrackbar('Non-Maxima noise supression, %', WINDOW_NAME, int(threshold_
 
 cap = cv2.VideoCapture(args.input)
 
+
+#-------
 def getOutputsNames(net):
     layersNames = net.getLayerNames()
     return [layersNames[i[0] - 1] for i in net.getUnconnectedOutLayers()]
-
+#-------
 while(cap.isOpened()):
     hasframe, image = cap.read()
     overlay = image.copy()
@@ -82,7 +82,7 @@ while(cap.isOpened()):
     class_ids = []
     confidences = []
     boxes = []
-
+#-------
     for out in outs:
             for detection in out:
                 scores = detection[5:]
@@ -100,6 +100,8 @@ while(cap.isOpened()):
                     boxes.append([left, top, width, height])
 
     indices = cv2.dnn.NMSBoxes(boxes, confidences, threshold_confidence, threshold_nms)
+
+
     for i in indices:
         i = i[0]
         box = boxes[i]
@@ -110,17 +112,23 @@ while(cap.isOpened()):
         
         label = str(CLASSES[class_ids[i]]+': {:.2f}%'.format(100*confidences[i]))
         color = COLORS[class_ids[i]]
-
+#-------
         cv2.rectangle(image, (int(left),int(top)), (int(left + width),int(top + height)), color, 2)
         cv2.putText(image, label, (int(left),int(top-10)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
-        alpha = (confidences[i]-threshold_confidence)*(1/(1-threshold_confidence))
-        cv2.addWeighted(image,alpha,overlay,1-alpha,0,image)
+        #alpha = (confidences[i]-threshold_confidence)*(1/(1-threshold_confidence))
+        #cv2.addWeighted(image,alpha,overlay,1-alpha,0,image)
 
     # Put efficiency information.
     if args.verbose:
-        t, _ = net.getPerfProfile()
-        label = 'Inference time: %.2f ms' % (t * 1000.0 / cv2.getTickFrequency())
-        cv2.putText(image, label, (0, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0))
+        time, _ = net.getPerfProfile()
+        label_inference = 'Inference time: %.2f ms' % (time * 1000.0 / cv2.getTickFrequency())
+        label_config =    'Config: %s' % args.config
+        label_weight =    'Weight: %s' % args.weights
+        label_input =     'Input: %s' % args.input
+        cv2.putText(image, label_inference, (0, 15), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255))
+        cv2.putText(image, label_config, (0, 30), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255))
+        cv2.putText(image, label_weight, (0, 45), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255))
+        cv2.putText(image, label_input, (0, 60), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255))
     
     cv2.imshow(WINDOW_NAME, image)
     #if args.verbose:
