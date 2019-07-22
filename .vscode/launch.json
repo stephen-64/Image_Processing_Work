@@ -44,7 +44,7 @@
                 "-c",
                 "YOLO_Tiny/F1-obj-10C.names",
                 "-i",
-                "F1_Austria_Race_Trimmed30.mkv"
+                "F1_Austria_Race_Trimmed.mkv"
             ]
         }
     ]

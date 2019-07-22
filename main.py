@@ -1,6 +1,6 @@
 from objdet import vid_runner
-from tkinter import *
-from tkinter.filedialog import askopenfilename
+from Tkinter import *
+#from Tkinter.filedialog import askopenfilename
 
 class App(Frame):
 
@@ -67,7 +67,10 @@ class App(Frame):
 def window_worker():
     root = Tk()
     root.resizable(False,False)
-    root.iconbitmap(".\\f1.ico")
+    try:
+        root.iconbitmap(".\\f1.ico")
+    except:
+        pass
     root.title("Video Processor")
     app = App(master=root)
     #root.geometry("420x210")
