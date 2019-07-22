@@ -3,7 +3,7 @@ import numpy as np
 import argparse
 import sys
 import time
-import cvui
+from time import sleep
 
 parser = argparse.ArgumentParser(description='object detection using YOLOV3')
 parser.add_argument('-a','--config',help='YOLO config',
@@ -18,6 +18,11 @@ parser.add_argument('-t','--confidence',help='threshold',default=0.1)
 parser.add_argument('-n','--nms',help='non-maximal noise suppression',default=0.99)
 parser.add_argument('-m','--matrix',help='size of initial image',default=320)
 args = parser.parse_args()
+
+print(cv2.__version__)
+
+matrix_values = [320,416,608]
+i = 0
 
 RED = (5,5,252)
 SILVER = (180,180,180)
@@ -60,20 +65,20 @@ def callback_nms(pos):
 
 threshold_confidence = args.confidence
 threshold_nms = args.nms
+matrix = args.matrix
 
 cv2.createTrackbar('Confidence threshold, %', WINDOW_NAME, int(threshold_confidence * 100), 99, callback_conf)
 cv2.createTrackbar('Non-Maxima noise supression, %', WINDOW_NAME, int(threshold_nms * 100), 99, callback_nms)
-#cv2.createButton('320', callback_320,)
 
 cap = cv2.VideoCapture(args.input)
 
 while(cap.isOpened()):
     hasframe, image = cap.read()
     overlay = image.copy()
-    net.setInput(cv2.dnn.blobFromImage(image, 1.0/255.0, (args.matrix,args.matrix), [0,0,0], True))
+    net.setInput(cv2.dnn.blobFromImage(image, 1.0/255.0, (matrix,matrix), [0,0,0], True))
     Height, Width = image.shape[:2]
 
-    #only works with yolo_tiny
+    #only works with yolo_tiny and 320?
     outs = net.forward(['yolo_16', 'yolo_23'])
 
     class_ids = []
@@ -81,20 +86,21 @@ while(cap.isOpened()):
     boxes = []
 #-------
     for out in outs:
-            for detection in out:
-                scores = detection[5:]
-                classId = np.argmax(scores)
-                confidence = scores[classId]
-                if confidence > threshold_confidence:
-                    center_x = int(detection[0] * Width)
-                    center_y = int(detection[1] * Height)
-                    width = int(detection[2] * Width)
-                    height = int(detection[3] * Height)
-                    left = int(center_x - width / 2)
-                    top = int(center_y - height / 2)
-                    class_ids.append(classId)
-                    confidences.append(float(confidence))
-                    boxes.append([left, top, width, height])
+        for detection in out:
+            scores = detection[5:]
+            classId = np.argmax(scores)
+            confidence = scores[classId]
+            if confidence > threshold_confidence:
+
+                CX, CY, width, height = detection[0:4] * [Width, Height, Width, Height]
+                X = int(CX - width / 2)
+                Y = int(CY - height / 2)
+                width = int(width)
+                height = int(height)
+
+                boxes.append([X,Y,width,height])
+                class_ids.append(classId)
+                confidences.append(float(confidence))
 
     indices = cv2.dnn.NMSBoxes(boxes, confidences, threshold_confidence, threshold_nms)
 
@@ -102,7 +108,7 @@ while(cap.isOpened()):
     for i in indices:
         i = i[0]
         box = boxes[i]
-        left,top, width, height = box[:4]
+        left, top, width, height = box[:4]
         
         label = str(CLASSES[class_ids[i]]+': {:.2f}%'.format(100*confidences[i]))
         color = COLORS[class_ids[i]]
@@ -119,7 +125,7 @@ while(cap.isOpened()):
         label_config =    'Config: %s' % args.config
         label_weight =    'Weight: %s' % args.weights
         label_input =     'Input: %s' % args.input
-        label_mat_size =  'Mat Size: %s' % args.matrix
+        label_mat_size =  'Mat Size: %s' % matrix
         cv2.putText(image, label_inference, (0, 15), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255))
         cv2.putText(image, label_config, (0, 30), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255))
         cv2.putText(image, label_weight, (0, 45), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 0, 255))
@@ -133,6 +139,7 @@ while(cap.isOpened()):
         break
     if cv2.waitKey(1) & 0xFF == ord('v'):
         verbose = not verbose
+        sleep(1)
     if cv2.getWindowProperty(WINDOW_NAME,0) == -1:
         break
 
